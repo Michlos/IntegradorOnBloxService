@@ -10,14 +10,9 @@ using Integrador.WebService;
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Diagnostics;
-using System.Linq;
-using System.Runtime.Remoting.Contexts;
 using System.ServiceProcess;
-using System.Text;
-using System.Threading.Tasks;
+using System.Threading;
+using System.Timers;
 
 namespace IntegradorOnBloxService
 {
@@ -25,6 +20,7 @@ namespace IntegradorOnBloxService
     public partial class Service : ServiceBase
     {
         //TODO: SETAR O TIMER PARA EXECUTAR O SERVIÇO
+        private System.Timers.Timer _timer;
 
         //SERVIÇOS DE BUSCA DE DADOS
         private OnBloxService _onBloxService;
@@ -34,20 +30,39 @@ namespace IntegradorOnBloxService
         private JsonService _jsonService;
 
         //MODELS DE CONFIGURAÇÃO 
-        private OnBloxConfigureModel OnBloxConfigureModel = new OnBloxConfigureModel();
-        private EmailConfigureModel EmailConfigureModel = new EmailConfigureModel();
+        private OnBloxConfigureModel _onBloxConfigureModel;
+        private EmailConfigureModel _emailConfigureModel;
 
         //MODELS DE ENTIDADES
         private List<EmailModel> EmailModelList;
-        private ClienteModel ClienteModel = new ClienteModel();
+        private ClienteModel ClienteModel;
         private List<ClienteModel> ClienteModelLilst;
 
         public Service()
         {
-            InitializeComponent(); 
+            InitializeComponent();  
+            _onBloxConfigureModel = new OnBloxConfigureModel();
+            _emailConfigureModel = new EmailConfigureModel();
+            ClienteModel = new ClienteModel();
         }
 
-        protected override void OnStart(string[] args)
+        private void SetTimer()
+        {
+            //CALCULA O INTERVALO ATÉ A PRÓXIMA EXECUÇÃO
+            TimeSpan timeToGo = _onBloxConfigureModel.HoraExecucao - DateTime.Now.TimeOfDay;
+            if (timeToGo < TimeSpan.Zero)
+            {
+                //SE A HORA JÁ PASSOU, PROGRAMA PARA O PRÓXIMO DIA
+                timeToGo = timeToGo.Add(new TimeSpan(24, 0, 0));
+            }
+
+            _timer = new System.Timers.Timer(timeToGo.TotalMilliseconds);
+            _timer.Elapsed += OnTimedEvent;
+            _timer.AutoReset = false; //EXECUTA APENAS UMA VEZ
+            _timer.Start();
+        }
+
+        private void OnTimedEvent(object sender, ElapsedEventArgs e)
         {
             BuscaConfiguracoes();
             ReceberEmails();
@@ -56,15 +71,23 @@ namespace IntegradorOnBloxService
 
         }
 
+        protected override void OnStart(string[] args)
+        {
+
+            SetTimer();
+        }
+
         protected override void OnStop()
         {
+            _timer.Stop();
+            _timer.Dispose();
         }
 
 
         public void BuscaConfiguracoes()
         {
-            this.OnBloxConfigureModel = _onBloxService.GetOnBloxConfigure();
-            this.EmailConfigureModel = _emailConfigureService.GetEmailConfigure();
+            this._onBloxConfigureModel = _onBloxService.GetOnBloxConfigure();
+            this._emailConfigureModel = _emailConfigureService.GetEmailConfigure();
         }
 
         public void ReceberEmails()
@@ -72,8 +95,8 @@ namespace IntegradorOnBloxService
             EmailModelList = new List<EmailModel>();
             _emailService.ConnectHost(true);
             EmailModelList = _emailService.ReceberMensagens(
-                this.EmailConfigureModel.CaixaDeEmail,
-                this.EmailConfigureModel.AssuntoEmail);
+                this._emailConfigureModel.CaixaDeEmail,
+                this._emailConfigureModel.AssuntoEmail);
             _emailService.SalvarEmailsNoBancoDeDados(this.EmailModelList);
 
         }
