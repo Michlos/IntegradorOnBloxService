@@ -66,7 +66,7 @@ namespace IntegradorOnBloxService
         {
             BuscaConfiguracoes();
             ReceberEmails();
-            SalvarClientes(); 
+            SalvarClientesDoEmail(); 
             IntegrararClientes();
 
         }
@@ -101,7 +101,7 @@ namespace IntegradorOnBloxService
 
         }
 
-        public void SalvarClientes()
+        public void SalvarClientesDoEmail()
         {
             _emailService.SalvarClienteNoBanco();
         }
@@ -119,6 +119,7 @@ namespace IntegradorOnBloxService
             {
                 if (item != null)
                 {
+
                     _jsonService.SendData(item);
                     _clienteService.SetIntegrado(item);                       
                 }
