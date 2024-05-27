@@ -23,7 +23,7 @@ namespace IntegradorOnBloxService
         private System.Timers.Timer _timer;
 
         //SERVIÇOS DE BUSCA DE DADOS
-        private OnBloxService _onBloxService;
+        private readonly OnBloxService _onBloxService;
         private EmailConfigureService _emailConfigureService;
         private EmailService _emailService;
         private ClienteService _clienteService;
