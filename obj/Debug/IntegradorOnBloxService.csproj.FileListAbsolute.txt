@@ -90,3 +90,7 @@ D:\Integrador OnBlox\IntegradorOnBloxService\bin\Debug\Microsoft.Extensions.Opti
 D:\Integrador OnBlox\IntegradorOnBloxService\bin\Debug\Microsoft.Extensions.Primitives.xml
 D:\Integrador OnBlox\IntegradorOnBloxService\bin\Debug\Microsoft.EntityFrameworkCore.Relational.xml
 D:\Integrador OnBlox\IntegradorOnBloxService\bin\Debug\Npgsql.EntityFrameworkCore.PostgreSQL.dll
+D:\Integrador OnBlox\IntegradorOnBloxService\bin\Debug\IntegradorOnBloxService.exe.manifest
+D:\Integrador OnBlox\IntegradorOnBloxService\bin\Debug\IntegradorOnBloxService.application
+D:\Integrador OnBlox\IntegradorOnBloxService\obj\Debug\IntegradorOnBloxService.exe.manifest
+D:\Integrador OnBlox\IntegradorOnBloxService\obj\Debug\IntegradorOnBloxService.application
