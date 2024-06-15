@@ -14,6 +14,11 @@ namespace IntegradorOnBloxService
         /// </summary>
         static void Main()
         {
+#if DEBUG
+            Service service = new Service();
+            service.onDebug();
+#else
+#endif
             ServiceBase[] ServicesToRun;
             ServicesToRun = new ServiceBase[]
             {

@@ -94,3 +94,4 @@ D:\Integrador OnBlox\IntegradorOnBloxService\bin\Debug\IntegradorOnBloxService.e
 D:\Integrador OnBlox\IntegradorOnBloxService\bin\Debug\IntegradorOnBloxService.application
 D:\Integrador OnBlox\IntegradorOnBloxService\obj\Debug\IntegradorOnBloxService.exe.manifest
 D:\Integrador OnBlox\IntegradorOnBloxService\obj\Debug\IntegradorOnBloxService.application
+D:\Integrador OnBlox\IntegradorOnBloxService\obj\Debug\IntegradorOnBloxService.ProjectInstaller.resources

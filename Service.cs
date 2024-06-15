@@ -15,6 +15,7 @@ using Integrador.WebService;
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.ServiceProcess;
 using System.Threading;
 using System.Timers;
@@ -26,7 +27,7 @@ namespace IntegradorOnBloxService
     {
         //TODO: SETAR O TIMER PARA EXECUTAR O SERVIÇO
         private System.Timers.Timer _timer;
-        private int nextExecutionIndex = 0;
+        int nextExecutionIndex = 0;
 
         //SERVIÇOS DE BUSCA DE DADOS
         private readonly OnBloxService _onBloxService;
@@ -43,6 +44,7 @@ namespace IntegradorOnBloxService
         private List<EmailModel> EmailModelList;
         private ClienteModel ClienteModel;
         private List<ClienteModel> ClienteModelLilst;
+        List<TimeSpan> executionTimes = new List<TimeSpan>();
 
         public Service()
         {
@@ -50,40 +52,62 @@ namespace IntegradorOnBloxService
             _emailConfigureService = new EmailConfigureService(new EmailConfigureRepository(new AppDbContext()));
             _emailService = new EmailService(new EmailRepository(new AppDbContext()), _emailConfigureService.GetEmailConfigure());
             _onBloxService = new OnBloxService(new OnBloxConfigureRepository(new AppDbContext()));
-            _onBloxConfigureModel = new OnBloxConfigureModel();
-            _emailConfigureModel = new EmailConfigureModel();
             _clienteService = new ClienteService(new ClienteRepository(new AppDbContext()));
             _jsonService = new JsonService();
-            ClienteModel = new ClienteModel();
+            //ClienteModel = new ClienteModel();
+            
+            
+            //_emailConfigureModel = new EmailConfigureModel();
+            //_emailConfigureModel = _emailConfigureService.GetEmailConfigure();
         }
 
 
-        private List<TimeSpan> executionTimes = new List<TimeSpan>()
-        {
+        //private List<TimeSpan> executionTimes = new List<TimeSpan>()
+        //{
 
-        };
+        //};
 
-        private void SetTimer()
+        private List<TimeSpan> SetTimer()
         {
+            
+            _onBloxConfigureModel = new OnBloxConfigureModel();
+            _onBloxConfigureModel = _onBloxService.GetOnBloxConfigure();
+
+            // Altera os tempos de execução para 1 minuto, 2 minutos e 3 minutos após a hora atual
+            _onBloxConfigureModel.HoraExecucao01 = DateTime.Now.TimeOfDay.Add(TimeSpan.FromMinutes(1));
+            _onBloxConfigureModel.HoraExecucao02 = DateTime.Now.TimeOfDay.Add(TimeSpan.FromMinutes(2));
+            _onBloxConfigureModel.HoraExecucao03 = DateTime.Now.TimeOfDay.Add(TimeSpan.FromMinutes(3));
+
             //CRIA UMA LISTA COM OS HORÁRIOS DE EXECUÇÃO
             List<TimeSpan> executionTimes = new List<TimeSpan>()
             {
                 _onBloxConfigureModel.HoraExecucao01,
                 _onBloxConfigureModel.HoraExecucao02,
                 _onBloxConfigureModel.HoraExecucao03
+
+
             };
 
+            
 
+
+            return executionTimes;
+
+
+            
+        }
+        private void SetarProximaExecucao(List<TimeSpan> timedList, int executionIndex)
+        {
             //CALCULA O INTERVALO ATÉ A PRÓXIMA EXECUÇÃO
-            TimeSpan timeToGo = executionTimes[nextExecutionIndex] - DateTime.Now.TimeOfDay;
-            if (timeToGo < TimeSpan.Zero)
+            TimeSpan timeToGo = timedList[executionIndex] - DateTime.Now.TimeOfDay;
+            if (timeToGo <= TimeSpan.Zero)
             {
                 //SE A HORA JÁ PASSOU, PROGRMAA PARA O PRÓXIMO HORÁRIO
-                nextExecutionIndex = (nextExecutionIndex + 1) % executionTimes.Count;
-                timeToGo = executionTimes[nextExecutionIndex] - DateTime.Now.TimeOfDay;
+                executionIndex = (executionIndex + 1) % timedList.Count;
+                timeToGo = timedList[executionIndex] - DateTime.Now.TimeOfDay;
                 if (timeToGo < TimeSpan.Zero)
                 {
-                    timeToGo = timeToGo.Add(new TimeSpan(24, 0, 0));
+                    timeToGo = timeToGo.Add(new TimeSpan(24, 0, 00));
                 }
             }
 
@@ -92,27 +116,43 @@ namespace IntegradorOnBloxService
             _timer.AutoReset = false; //EXECUTA APENAS UMA VEZ
             _timer.Start();
         }
+        
 
         private void OnTimedEvent(object sender, ElapsedEventArgs e)
         {
             //EXECUTA O SERVIÇO
-            BuscaConfiguracoes();
-            ReceberEmails();
-            SalvarClientesDoEmail(); 
-            IntegrararClientes();
+            
 
 
+            //clocar o executaintegracao aqui
+            ExecutaIntegrcao();
             //PROGRAMA O PRÓXIMO HORÁRIO
             nextExecutionIndex = (nextExecutionIndex + 1) % 3;//ATUALIZA O ÍNDICE PARA O PRÓXIMO HORÁRIO
-            SetTimer();
+            
+            
+            executionTimes = SetTimer();
+            SetarProximaExecucao(executionTimes, nextExecutionIndex);
 
 
         }
 
         protected override void OnStart(string[] args)
         {
-
-            SetTimer();
+            
+            
+            //PEGA AS HORAS DE EXECUÇÃO DO BANCO
+            executionTimes = SetTimer();
+            
+            //DETERMINA QUANDO SERÁ EXECUTADO
+            SetarProximaExecucao(executionTimes, nextExecutionIndex);
+            
+        }
+        public void ExecutaIntegrcao()
+        {
+            BuscaConfiguracoes();
+            ReceberEmails();
+            SalvarClientesDoEmail(); 
+            IntegrararClientes();
         }
 
         protected override void OnStop()
@@ -164,6 +204,12 @@ namespace IntegradorOnBloxService
             }
 
 
+        }
+
+        public void onDebug()
+        {
+            //System.Diagnostics.Debugger.Launch();
+            OnStart(null);
         }
     }
 }
