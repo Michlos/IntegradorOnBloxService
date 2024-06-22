@@ -186,14 +186,14 @@ namespace IntegradorOnBloxService
 
         public void IntegrararClientes()
         {
-            this.ClienteModelLilst = new List<ClienteModel>();
-            var clienteList = _clienteService.GetAll();
-            foreach (var item in clienteList)
-            {
-                this.ClienteModelLilst.Add(item as ClienteModel);
-            }
+            //this.ClienteModelLilst = new List<ClienteModel>();
+            this.ClienteModelLilst = _clienteService.GetAll() as List<ClienteModel>;
+            //foreach (var item in clienteList)
+            //{
+            //    this.ClienteModelLilst.Add(item as ClienteModel);
+            //}
 
-            foreach (var item in this.ClienteModelLilst)
+            foreach (var item in ClienteModelLilst)
             {
                 if (item != null)
                 {
