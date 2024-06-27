@@ -42,7 +42,7 @@ namespace IntegradorOnBloxService
 
         //MODELS DE ENTIDADES
         private List<EmailModel> EmailModelList;
-        private ClienteModel ClienteModel;
+        //private ClienteModel ClienteModel;
         private List<ClienteModel> ClienteModelLilst;
         List<TimeSpan> executionTimes = new List<TimeSpan>();
 
