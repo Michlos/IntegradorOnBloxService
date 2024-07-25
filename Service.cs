@@ -31,10 +31,10 @@ namespace IntegradorOnBloxService
 
         //SERVIÇOS DE BUSCA DE DADOS
         private readonly OnBloxService _onBloxService;
-        private EmailConfigureService _emailConfigureService;
-        private EmailService _emailService;
-        private ClienteService _clienteService;
-        private JsonService _jsonService;
+        private readonly EmailConfigureService _emailConfigureService;
+        private readonly EmailService _emailService;
+        private readonly ClienteService _clienteService;
+        private readonly JsonService _jsonService;
 
         //MODELS DE CONFIGURAÇÃO 
         private OnBloxConfigureModel _onBloxConfigureModel;
@@ -42,7 +42,6 @@ namespace IntegradorOnBloxService
 
         //MODELS DE ENTIDADES
         private List<EmailModel> EmailModelList;
-        //private ClienteModel ClienteModel;
         private List<ClienteModel> ClienteModelLilst;
         List<TimeSpan> executionTimes = new List<TimeSpan>();
 
@@ -54,18 +53,9 @@ namespace IntegradorOnBloxService
             _onBloxService = new OnBloxService(new OnBloxConfigureRepository(new AppDbContext()));
             _clienteService = new ClienteService(new ClienteRepository(new AppDbContext()));
             _jsonService = new JsonService();
-            //ClienteModel = new ClienteModel();
-            
-            
-            //_emailConfigureModel = new EmailConfigureModel();
-            //_emailConfigureModel = _emailConfigureService.GetEmailConfigure();
+           
         }
 
-
-        //private List<TimeSpan> executionTimes = new List<TimeSpan>()
-        //{
-
-        //};
 
         private List<TimeSpan> SetTimer()
         {
@@ -84,8 +74,6 @@ namespace IntegradorOnBloxService
                 _onBloxConfigureModel.HoraExecucao01,
                 _onBloxConfigureModel.HoraExecucao02,
                 _onBloxConfigureModel.HoraExecucao03
-
-
             };
 
             
@@ -121,15 +109,10 @@ namespace IntegradorOnBloxService
         private void OnTimedEvent(object sender, ElapsedEventArgs e)
         {
             //EXECUTA O SERVIÇO
-            
-
-
-            //clocar o executaintegracao aqui
             ExecutaIntegrcao();
+
             //PROGRAMA O PRÓXIMO HORÁRIO
             nextExecutionIndex = (nextExecutionIndex + 1) % 3;//ATUALIZA O ÍNDICE PARA O PRÓXIMO HORÁRIO
-            
-            
             executionTimes = SetTimer();
             SetarProximaExecucao(executionTimes, nextExecutionIndex);
 
@@ -186,13 +169,8 @@ namespace IntegradorOnBloxService
 
         public void IntegrararClientes()
         {
-            //this.ClienteModelLilst = new List<ClienteModel>();
+            
             this.ClienteModelLilst = _clienteService.GetAll() as List<ClienteModel>;
-            //foreach (var item in clienteList)
-            //{
-            //    this.ClienteModelLilst.Add(item as ClienteModel);
-            //}
-
             foreach (var item in ClienteModelLilst)
             {
                 if (item != null)
@@ -206,7 +184,7 @@ namespace IntegradorOnBloxService
 
         }
 
-        public void onDebug()
+        public void OnDebug()
         {
             //System.Diagnostics.Debugger.Launch();
             OnStart(null);
