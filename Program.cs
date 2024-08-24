@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace IntegradorOnBloxService
 {
+
     internal static class Program
     {
         /// <summary>
@@ -14,11 +15,11 @@ namespace IntegradorOnBloxService
         /// </summary>
         static void Main()
         {
-#if DEBUG
-            Service service = new Service();
-            service.OnDebug();
-#else
-#endif
+//#if DEBUG
+//            Service service = new Service();
+//            service.OnDebug();
+//#else
+//#endif
             ServiceBase[] ServicesToRun;
             ServicesToRun = new ServiceBase[]
             {

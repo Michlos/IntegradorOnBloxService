@@ -1,6 +1,7 @@
 ﻿using Integrador.Domain.Cliente;
 using Integrador.Domain.Email;
 using Integrador.Domain.EmailConfigure;
+using Integrador.Domain.LogIntegracao;
 using Integrador.Domain.OnBloxConfigure;
 using Integrador.Repository.Cliente;
 using Integrador.Repository.Email;
@@ -13,15 +14,26 @@ using Integrador.Services.EmailConfigure;
 using Integrador.Services.OnBloxConfigure;
 using Integrador.WebService;
 
+using Newtonsoft.Json;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.ServiceProcess;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Timers;
+using System.Xml;
 
 namespace IntegradorOnBloxService
 {
+    public class LogDados
+    {
+        public DateTime HoraExecucao { get; set; }
+        public string Descricao { get; set; }
+        //public TimeSpan HoraProgramada { get; set; }
+        
+    }
 
     public partial class Service : ServiceBase
     {
@@ -53,20 +65,22 @@ namespace IntegradorOnBloxService
             _onBloxService = new OnBloxService(new OnBloxConfigureRepository(new AppDbContext()));
             _clienteService = new ClienteService(new ClienteRepository(new AppDbContext()));
             _jsonService = new JsonService();
-           
+
         }
 
 
         private List<TimeSpan> SetTimer()
         {
-            
+
             _onBloxConfigureModel = new OnBloxConfigureModel();
             _onBloxConfigureModel = _onBloxService.GetOnBloxConfigure();
 
-            // Altera os tempos de execução para 1 minuto, 2 minutos e 3 minutos após a hora atual
-            _onBloxConfigureModel.HoraExecucao01 = DateTime.Now.TimeOfDay.Add(TimeSpan.FromMinutes(1));
-            _onBloxConfigureModel.HoraExecucao02 = DateTime.Now.TimeOfDay.Add(TimeSpan.FromMinutes(2));
-            _onBloxConfigureModel.HoraExecucao03 = DateTime.Now.TimeOfDay.Add(TimeSpan.FromMinutes(3));
+            //// Altera os tempos de execução para 1 minuto, 2 minutos e 3 minutos após a hora atual
+            //_onBloxConfigureModel.HoraExecucao01 = DateTime.Now.TimeOfDay.Add(TimeSpan.FromMinutes(1));
+            //_onBloxConfigureModel.HoraExecucao02 = DateTime.Now.TimeOfDay.Add(TimeSpan.FromMinutes(2));
+            //_onBloxConfigureModel.HoraExecucao03 = DateTime.Now.TimeOfDay.Add(TimeSpan.FromMinutes(3));  
+
+
 
             //CRIA UMA LISTA COM OS HORÁRIOS DE EXECUÇÃO
             List<TimeSpan> executionTimes = new List<TimeSpan>()
@@ -76,13 +90,13 @@ namespace IntegradorOnBloxService
                 _onBloxConfigureModel.HoraExecucao03
             };
 
-            
+
 
 
             return executionTimes;
 
 
-            
+
         }
         private void SetarProximaExecucao(List<TimeSpan> timedList, int executionIndex)
         {
@@ -104,10 +118,13 @@ namespace IntegradorOnBloxService
             _timer.AutoReset = false; //EXECUTA APENAS UMA VEZ
             _timer.Start();
         }
-        
+
 
         private void OnTimedEvent(object sender, ElapsedEventArgs e)
         {
+
+            // hora da execução
+            
             //EXECUTA O SERVIÇO
             ExecutaIntegrcao();
 
@@ -115,26 +132,27 @@ namespace IntegradorOnBloxService
             nextExecutionIndex = (nextExecutionIndex + 1) % 3;//ATUALIZA O ÍNDICE PARA O PRÓXIMO HORÁRIO
             executionTimes = SetTimer();
             SetarProximaExecucao(executionTimes, nextExecutionIndex);
-
+            SaveLogFile(DateTime.Now, "iniciando a integração");
 
         }
 
         protected override void OnStart(string[] args)
         {
             
-            
+
             //PEGA AS HORAS DE EXECUÇÃO DO BANCO
             executionTimes = SetTimer();
-            
+
             //DETERMINA QUANDO SERÁ EXECUTADO
             SetarProximaExecucao(executionTimes, nextExecutionIndex);
-            
+
+            SaveLogFile(DateTime.Now, "inicio da execucao");
         }
         public void ExecutaIntegrcao()
         {
             BuscaConfiguracoes();
-            ReceberEmails();
-            SalvarClientesDoEmail(); 
+            //ReceberEmails();
+            SalvarClientesDoEmail();
             IntegrararClientes();
         }
 
@@ -147,8 +165,11 @@ namespace IntegradorOnBloxService
 
         public void BuscaConfiguracoes()
         {
-            this._onBloxConfigureModel = _onBloxService.GetOnBloxConfigure();
-            this._emailConfigureModel = _emailConfigureService.GetEmailConfigure();
+
+            _onBloxConfigureModel = new OnBloxConfigureModel();
+            _emailConfigureModel = new EmailConfigureModel();
+            _onBloxConfigureModel = _onBloxService.GetOnBloxConfigure();
+            _emailConfigureModel = _emailConfigureService.GetEmailConfigure();
         }
 
         public void ReceberEmails()
@@ -169,24 +190,57 @@ namespace IntegradorOnBloxService
 
         public void IntegrararClientes()
         {
-            
+
             this.ClienteModelLilst = _clienteService.GetAll() as List<ClienteModel>;
             foreach (var item in ClienteModelLilst)
             {
                 if (item != null)
                 {
+                    if (!item.integrado)
+                    {
+                        _jsonService.SendData(item);
+                        _clienteService.SetIntegrado(item);
 
-                    _jsonService.SendData(item);
-                    _clienteService.SetIntegrado(item);                       
+                    }
                 }
             }
 
 
         }
 
+
+        public async void SaveLogFile(DateTime horarecebida, string descricao)
+        {
+            _emailConfigureModel = new EmailConfigureModel();
+            _emailConfigureModel = _emailConfigureService.GetEmailConfigure();
+
+            LogDados log = new LogDados
+            {
+                HoraExecucao = horarecebida,
+                Descricao = descricao,
+                //HoraProgramada = horaprogramada
+            };
+
+            string logSerializado = JsonConvert.SerializeObject(log);
+            StreamWriter file = null;
+            try
+            {
+                file = File.AppendText($@"{_emailConfigureModel.PastaTemporaria}\LogService{DateTime.Now.Day:D2}{DateTime.Now.Month:D2}{DateTime.Now.Year}.json");
+                await file.WriteAsync("\n" + logSerializado);
+            }
+            catch (Exception e)
+            {
+                throw new Exception($"Erro ao salvar o arquivo de Log. MessageError: {e.Message} \n InnerException: {e.InnerException}");
+            }
+            finally
+            {
+                file?.Close();
+            }
+        }
+
         public void OnDebug()
         {
-            //System.Diagnostics.Debugger.Launch();
+            System.Diagnostics.Debugger.Launch();
             OnStart(null);
         }
     }
