@@ -126,13 +126,15 @@ namespace IntegradorOnBloxService
             // hora da execução
             
             //EXECUTA O SERVIÇO
+            SaveLogFile(DateTime.Now, "Iniciando a integração");
             ExecutaIntegrcao();
+            SaveLogFile(DateTime.Now, "Conclusão da Integração");
 
             //PROGRAMA O PRÓXIMO HORÁRIO
             nextExecutionIndex = (nextExecutionIndex + 1) % 3;//ATUALIZA O ÍNDICE PARA O PRÓXIMO HORÁRIO
+            SaveLogFile(DateTime.Now, $"Marcando a proxima execução para{nextExecutionIndex}");
             executionTimes = SetTimer();
             SetarProximaExecucao(executionTimes, nextExecutionIndex);
-            SaveLogFile(DateTime.Now, "iniciando a integração");
 
         }
 
@@ -146,12 +148,12 @@ namespace IntegradorOnBloxService
             //DETERMINA QUANDO SERÁ EXECUTADO
             SetarProximaExecucao(executionTimes, nextExecutionIndex);
 
-            SaveLogFile(DateTime.Now, "inicio da execucao");
+            SaveLogFile(DateTime.Now, "Inicio da execucao");
         }
         public void ExecutaIntegrcao()
         {
             BuscaConfiguracoes();
-            //ReceberEmails();
+            ReceberEmails();
             SalvarClientesDoEmail();
             IntegrararClientes();
         }
@@ -174,12 +176,19 @@ namespace IntegradorOnBloxService
 
         public void ReceberEmails()
         {
+            SaveLogFile(DateTime.Now, "Recebendo Emails");
+
             EmailModelList = new List<EmailModel>();
             _emailService.ConnectHost(true);
             EmailModelList = _emailService.ReceberMensagens(
                 this._emailConfigureModel.CaixaDeEmail,
                 this._emailConfigureModel.AssuntoEmail);
+            
+            SaveLogFile(DateTime.Now, "Conclusao do recebimeto de e-mails");
+
+            SaveLogFile(DateTime.Now, "Salvando clintes no banco de dados local");
             _emailService.SalvarEmailsNoBancoDeDados(this.EmailModelList);
+            SaveLogFile(DateTime.Now, "Concluida a inclusão de clientes no banco de daldos local");
 
         }
 
